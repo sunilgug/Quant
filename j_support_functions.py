@@ -7,20 +7,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import warnings
 import os
-#import investpy
-os.chdir('/Users/sunilguglani/opt/anaconda3/lib/Algos/')
-from TechnicalIndicator_Sunil import *
 
 
 '''********************************'''
 
 warnings.filterwarnings('ignore')
-'''
-# Function to backtest any strategy by using parameter         
-    #Dataframe, 
-    #strategy_type(long/short),entry_criteria,exit_criteria
-    #positional_field ,price_field(example Close price),stoploss_pct(stop loss pct),target_pct,only_profit(should wait for trade to be in profit True/False)
-'''
 
 def Combinations_6(lst_A,lst_B,lst_C,lst_D,lst_E,lst_F):
     lst_combination=[]
@@ -207,14 +198,6 @@ def consolidate_files(path,filename):
     
     return prices_consol
 
-def Data_Fetch(g,filen):
-    df=consolidate_files(g,filen)
-    print(df.columns)
-    df.index=pd.to_datetime(df['Date'].astype(str)+' '+df['timestamp'].astype(str),format='%Y%m%d %H:%M')
-    
-    df.sort_index(ascending=True,inplace=True)
-    
-    return df
 
 def resample_df2(df,targ_time_interval):
 
@@ -262,104 +245,6 @@ def backtest_reports_local(df_summary,lot_size,trx_charge):
      data=df_summary)
     
     plt.show(g3)
-
-def fetch_data_file(script,lookback_period=0) :
-    filepath='/Users/sunilguglani/Historical_Data/j_data/'
-    script='agridex'
-    script=str(script)+'.NSE.csv'
-    script=filepath+script
-    print(script)
-    df = pd.read_csv(str(script),parse_dates=True)
-    df.dropna(inplace=True)
-
-    df["Date"]=pd.to_datetime(df['Date'])
-    df.index=df['Date']
-
-    return df
-
-
-def fetch_data_ncdex_file(script,lookback_period=0) :
-    filepath='/Users/sunilguglani/Historical_Data/j_data/agridexanditscomponentsdata/'
-    #script='AGRIDEX'
-    script=str(script)+'.csv'
-    script=filepath+script
-    print(script)
-    
-    df = pd.read_csv(str(script),parse_dates=['Date'],index_col='Date')
-    df.columns
-    
-    
-    df['Open']=df['Opening Price'].copy()
-    df['High']=df['HighPrice'].copy()
-    df['Low']=df['LowPrice'].copy()
-    df['Close']=df['Closing Price'].copy()
-    df['Adjusted_close']=df['Closing Price'].copy()
-    
-    df.drop(columns=['Closing Price', 'Opening Price', 'HighPrice', 'LowPrice','Commodity','Expiry Date','Traded Value in lacs', 'Quantity Traded Today', 'Open Interest','Previous Closing Price'],inplace=True)
-    df.dropna(inplace=True)
-
-    return df
-
-
-def fetch_data_intra_file(script):
-    filen=script+'_F1.txt'
-    #filen=script+'.txt'
-
-    #filepath='//Users/sunilguglani/Downloads/IntradayData/IntradayData_FEB2020/ACC_F1.txt'
-    filepath='/Users/sunilguglani/Historical_Data/IntradayData/latest/IntradayData_2020/IntradayData_JAN2020/*'
-    filepath='/Users/sunilguglani/Historical_Data/IntradayData/latest/IntradayData_2019/*/'
-    filepath='/Users/sunilguglani/Historical_Data/IntradayData/latest/IntradayData_2019/*/'
-    filepath='/Users/sunilguglani/Historical_Data/IntradayData/*/'
-
-    g=filepath
-    df=Data_Fetch(filepath,filen)
-    #df=pd.read_csv(filepath+filen, engine='python')
-    #df=df[df.Date>='2020-02-20']
-    targ_time_interval='5min'
-    df= resample_df2(df,targ_time_interval)
-
-    return df
-
-
-def fetch_data_intra_file_v2(script,freq='1min'):
-    filen=script+'_F1.txt'
-    #filen=script+'.txt'
-
-    #filepath='//Users/sunilguglani/Downloads/IntradayData/IntradayData_FEB2020/ACC_F1.txt'
-    #filepath='/Users/sunilguglani/Historical_Data/IntradayData/latest/IntradayData_2020/IntradayData_MAY2020/*/'
-    filepath='/Users/sunilguglani/Historical_Data/IntradayData/latest/IntradayData_2019/*/'
-    #filepath='/Users/sunilguglani/Historical_Data/IntradayData/latest/IntradayData_2020/IntradayData_MAY2020/*'
-    filepath='/Users/sunilguglani/Historical_Data/IntradayData/IntradayData_JAN_JUN2019/'
-
-    g=filepath
-    df=Data_Fetch(filepath,filen)
-    #df=pd.read_csv(filepath+filen, engine='python')
-    #df=df[df.Date>='2020-02-20']
-    targ_time_interval=freq
-    df= resample_df2(df,targ_time_interval)
-
-    return df
-
-def fetch_data_intra_file_v3(script,filepath,freq='1min'):
-    #filen=script+'_F1.txt'
-    filen=script+'.txt'
-
-    #filepath='//Users/sunilguglani/Downloads/IntradayData/IntradayData_FEB2020/ACC_F1.txt'
-    #filepath='/Users/sunilguglani/Historical_Data/IntradayData/latest/IntradayData_2020/IntradayData_MAY2020/*/'
-    #filepath='/Users/sunilguglani/Historical_Data/IntradayData/latest/IntradayData_2020/IntradayData_MAR2020/*'
-    #filepath='/Users/sunilguglani/Historical_Data/IntradayData/latest/IntradayData_2019/*/'
-
-    g=filepath
-    df=Data_Fetch(filepath,filen)
-    #df=pd.read_csv(filepath+filen, engine='python')
-    #df=df[df.Date>='2020-02-20']
-    targ_time_interval=freq
-    #df= resample_df2(df,targ_time_interval)
-
-    return df
-
-#pd.read_csv(filepath+filen)
-   
 
 '''
 invoking the main Function 
