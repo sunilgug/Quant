@@ -267,3 +267,260 @@ def backtest_reports_local2(roll,low,up,df_summary,lot_size,trx_charge):
     df_summary['returns'].mean(),
     df_summary[df_summary.returns_abs<0]['returns'].min(),
     (df_summary[df_summary.returns_abs>0]['returns'].count())/(df_summary[df_summary.returns_abs<0]['returns'].count()))
+
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb 15 10:11:39 2019
+
+@author: sunilguglani
+"""
+import sys
+import pandas as pd
+import requests
+import numpy as np
+import datetime
+from nsepy.live import get_quote
+from pandas.io.json import json_normalize 
+import os
+import nsetools
+import time
+from nsepy import get_history,get_index_pe_history
+from nsepy.history import get_price_list
+
+lstDeriv=['ACC',	'ADANIENT',	'ADANIPORTS',	'ADANIPOWER',	'AJANTPHARM',	'ALBK',	'AMARAJABAT',	'AMBUJACEM',	'ANDHRABANK',	'APOLLOHOSP',	'APOLLOTYRE',	'ARVIND',	'ASHOKLEY',	'ASIANPAINT',	'AUROPHARMA',	'AXISBANK',	'BAJAJ-AUTO',	'BAJFINANCE',	'BAJAJFINSV',	'BALKRISIND',	'BALRAMCHIN',	'BANKBARODA',	'BANKINDIA',	'BATAINDIA',	'BEML',	'BERGEPAINT',	'BEL',	'BHARATFIN',	'BHARATFORG',	'BPCL',	'BHARTIARTL',	'INFRATEL',	'BHEL',	'BIOCON',	'BOSCHLTD',	'BRITANNIA',	'CADILAHC',	'CANFINHOME',	'CANBK',	'CAPF',	'CASTROLIND',	'CEATLTD',	'CENTURYTEX',	'CESC',	'CGPOWER',	'CHENNPETRO',	'CHOLAFIN',	'CIPLA',	'COALINDIA',	'COLPAL',	'CONCOR',	'CUMMINSIND',	'DABUR',	'DALMIABHA',	'DCBBANK',	'DHFL',	'DISHTV',	'DIVISLAB',	'DLF',	'DRREDDY',	'EICHERMOT',	'ENGINERSIN',	'EQUITAS',	'ESCORTS',	'EXIDEIND',	'FEDERALBNK',	'GAIL',	'GLENMARK',	'GMRINFRA',	'GODFRYPHLP',	'GODREJCP',	'GODREJIND',	'GRANULES',	'GRASIM',	'GSFC',	'HAVELLS',	'HCLTECH',	'HDFCBANK',	'HDFC',	'HEROMOTOCO',	'HEXAWARE',	'HINDALCO',	'HCC',	'HINDPETRO',	'HINDUNILVR',	'HINDZINC',	'ICICIBANK',	'ICICIPRULI',	'IDBI',	'IDEA',	'IDFCBANK',	'IDFC',	'IFCI',	'IBULHSGFIN',	'INDIANB',	'IOC',	'IGL',	'INDUSINDBK',	'INFIBEAM',	'INFY',	'INDIGO',	'IRB',	'ITC',	'JISLJALEQS',	'JPASSOCIAT',	'JETAIRWAYS',	'JINDALSTEL',	'JSWSTEEL',	'JUBLFOOD',	'JUSTDIAL',	'KAJARIACER',	'KTKBANK',	'KSCL',	'KOTAKBANK',	'KPIT',	'L&TFH',	'LT',	'LICHSGFIN',	'LUPIN',	'M&MFIN',	'MGL',	'M&M',	'MANAPPURAM',	'MRPL',	'MARICO',	'MARUTI',	'MFSL',	'MINDTREE',	'MOTHERSUMI',	'MRF',	'MCX',	'MUTHOOTFIN',	'NATIONALUM',	'NBCC',	'NCC',	'NESTLEIND',	'NHPC',	'NIITTECH',	'NMDC',	'NTPC',	'ONGC',	'OIL',	'OFSS',	'ORIENTBANK',	'PAGEIND',	'PCJEWELLER',	'PETRONET',	'PIDILITIND',	'PEL',	'PFC',	'POWERGRID',	'PTC',	'PNB',	'PVR',	'RAYMOND',	'RBLBANK',	'RELCAPITAL',	'RCOM',	'RNAVAL',	'RELIANCE',	'RELINFRA',	'RPOWER',	'REPCOHOME',	'RECLTD',	'SHREECEM',	'SRTRANSFIN',	'SIEMENS',	'SREINFRA',	'SRF',	'SBIN',	'SAIL',	'STAR',	'SUNPHARMA',	'SUNTV',	'SUZLON',	'SYNDIBANK',	'TATACHEM',	'TATACOMM',	'TCS',	'TATAELXSI',	'TATAGLOBAL',	'TATAMTRDVR',	'TATAMOTORS',	'TATAPOWER',	'TATASTEEL',	'TECHM',	'INDIACEM',	'RAMCOCEM',	'SOUTHBANK',	'TITAN',	'TORNTPHARM',	'TORNTPOWER',	'TV18BRDCST',	'TVSMOTOR',	'UJJIVAN',	'ULTRACEMCO',	'UNIONBANK',	'UBL',	'MCDOWELL-N',	'UPL',	'VEDL',	'VGUARD',	'VOLTAS',	'WIPRO',	'WOCKPHARMA',	'YESBANK',	'ZEEL']
+
+
+def traders_hunt():
+    traders_hunt_url='https://docs.google.com/spreadsheets/d/1aLKkL-nwJXtKoRCB3wKZMed0GMucP1p-S9eU2cEMqww/htmlview?usp=sharing&sle=true&pru=AAABaO97sT8*M0UrblxvAxiyCj07Kh1taw#'
+    
+    resp=requests.get(traders_hunt_url)
+    
+    df=pd.read_html(resp.content)
+    
+    df_screen=df[1]
+    df_levels=df[3]
+    df_hotdeals=df[6]
+    df_top10=df[7]
+    df_stockoptions=df[8]
+    
+    df_hotdeals=df[9]
+    df_option_chain=df[10]
+    
+    
+    df_screen.columns=df_screen.iloc[0]
+    df_screen.drop(df_screen.columns[0],axis=1,inplace=True)
+    df_screen.drop([0],axis=0, inplace=True)
+    
+    
+    df_screen.dropna(how='all',axis=1, inplace=True)
+    df_screen.dropna(how="all",axis=0, inplace=True)
+    
+    df_screen['OI_Inc P_Inc']=df_screen['OI_Inc P_Inc'].str.replace('%','')
+    df_screen['OI_Dec P_Dec']=df_screen['OI_Dec P_Dec'].str.replace('%','')
+    OI_Inc_param=5
+    OI_Dec_param=-5
+
+    df_screen_buy=df_screen[((df_screen['PA Signal']=='MUST BUY')|(df_screen['PA Signal']=='STRONG BUY'))&(df_screen['OI_Inc P_Inc'].astype(float)>OI_Inc_param)]
+    df_screen_sell=df_screen[(((df_screen['PA Signal']=='MUST SELL')|(df_screen['PA Signal']=='STRONG SELL'))
+                                            &(df_screen['OI_Dec P_Dec'].astype(float)<OI_Dec_param))]
+    
+    #df_screen_buy=df_screen_buy[df_screen_buy['Two Day Candle Pattern'].str.contains('Bullish')].copy()
+    #df_screen_sell=df_screen_sell[df_screen_sell['Two Day Candle Pattern'].str.contains('Bear')].copy()
+    
+    df_hotdeals_1120_1300=df_hotdeals.iloc[:,0:7]
+    df_hotdeals_1415_1500=df_hotdeals.iloc[:,8:14]
+    
+    return list(df_screen_buy[df_screen_buy.columns[0]]),list(df_screen_sell[df_screen_sell.columns[0]])
+
+
+
+def market_hours():
+    """
+    Checks whether the market is open or not
+    :returns: bool variable indicating status of market. True -> Open, False -> Closed
+    """
+    current_time = datetime.datetime.now().time()
+    # Check if the current time is in the time bracket in which NSE operates.
+    # The market opens at 9:15 am
+    start_time = datetime.datetime.now().time().replace(hour=9, minute=15, second=0, microsecond=0)
+    # And ends at 3:30 = 15:30
+    end_time = datetime.datetime.now().time().replace(hour=15, minute=30, second=0, microsecond=0)
+
+    if current_time > start_time and current_time < end_time:
+        return True
+
+    # In case the above condition does not satisfy, the default value (False) is returned
+    return False
+
+def  moneycontrol_industry_watch():
+    import requests
+    import pandas as pd
+    
+    url_ind='https://www.moneycontrol.com/stocks/marketstats/sector-scan/nse/today.html'
+    resp_ind=requests.get(url_ind)
+    ind_lst=pd.read_html(resp_ind.text)
+    lst_cols=[0,1,2,3,4,5,6]
+    df=pd.DataFrame(columns=lst_cols)
+    i=0
+    while (i<len(ind_lst)):
+        if (lst_cols==list(ind_lst[i].columns)):
+            df=df.append(pd.DataFrame(ind_lst[i]))
+            print(i)
+        i=i+1
+    
+    df.reset_index(drop=True,inplace=True)
+    
+    df.columns=['Sector','MarketCap','Perc_Change','3'	,'AD_Ratio'	,'Advance',	'Decline']
+    df.drop(columns=['3'],inplace=True)
+    df.sort_values(by='Sector',inplace=True)
+    df.dropna(inplace=True)
+    return df
+
+def moneycontrol_fut_oi_watch(mode='Up'):
+    import requests
+    import pandas as pd
+    #mode='Up'
+    url_oi_inc_p_inc='https://www.moneycontrol.com/stocks/fno/marketstats/futures/oi_inc_p_inc/homebody.php?opttopic=allfut&optinst=allfut&sel_mth=all&sort_order=1'
+    url_oi_inc_p_dec='https://www.moneycontrol.com/stocks/fno/marketstats/futures/oi_inc_p_dec/homebody.php?opttopic=allfut&optinst=allfut&sel_mth=all&sort_order=0'
+
+    if mode=='Up':
+        url=url_oi_inc_p_inc
+        sort_ascending=False
+    else:
+        url=url_oi_inc_p_dec
+        sort_ascending=True
+
+    resp_ind=requests.get(url)
+    ind_lst=pd.read_html(resp_ind.text)
+    lst_cols=[0,1,2,3,4,5,6,7,8,9,10,11]
+    df=pd.DataFrame(columns=lst_cols)
+    i=0
+    while (i<len(ind_lst)):
+        if (lst_cols==list(ind_lst[i].columns)):
+            df=df.append(pd.DataFrame(ind_lst[i]))
+            print(i)
+        i=i+1
+    
+    df.reset_index(drop=True,inplace=True)
+    
+    df.columns=['Symbol','Expiry_Date','Last_Price','Price_Change','Perc_Change','HighLow','AveragePrice','Open_Interest',
+                'Increase_in_OI'	,'Perc_Increase_OI','Volume','Perc_change_volume'	]
+    df.drop(0,axis=0,inplace=True)
+    df.drop('HighLow',axis=1,inplace=True)
+    df.replace('-',0.0, inplace=True)
+    df.replace('%','', inplace=True)
+
+    df['Expiry_Date']=pd.to_datetime(df['Expiry_Date'])
+    
+    for col in df.columns:
+        if ((col=='Symbol')| (col=='Expiry_Date')|('Perc_' in col  )):
+            pass
+        else:
+            df[col]=pd.to_numeric(df[col])
+            
+    df.sort_values(by=['Perc_Increase_OI','Perc_Change'], ascending=sort_ascending ,inplace=True)
+    df.dropna(inplace=True)
+    return df
+
+def nse_index_watch(symbol):
+
+    from nsetools import Nse
+    nse = Nse()
+    
+    '''
+    q = nse.get_quote('infy') # it's ok to use both upper or lower case for codes.
+    from pprint import pprint # just for neatness of display
+    pprint(q)
+    '''
+    '''
+    help(nse)
+    get_top_fno_losers
+    nse.get_top_fno_gainers()
+    '''
+    #fno_gainer = json_normalize(nse.get_fno_lot_sizes()).T
+    fno_gainer = json_normalize(nse.get_advances_declines())
+    fno_gainer['adratio']=fno_gainer['advances']/fno_gainer['declines']
+    
+    return round(float(fno_gainer[fno_gainer.indice==symbol]['adratio']),2)
+
+def plot_corr(df,size=15):
+    '''Function plots a graphical correlation matrix for each pair of columns in the dataframe.
+
+    Input:
+        df: pandas DataFrame
+        size: vertical and horizontal size of the plot'''
+
+    corr = df.corr()
+    fig, ax = plt.subplots(figsize=(size, size))
+    plt=ax.matshow(corr)
+    plt.xticks(range(len(corr.columns)), corr.columns);
+    plt.yticks(range(len(corr.columns)), corr.columns);
+
+#plot_corr(df_nifty)
+
+
+def get_latest_bhavcopy():
+    
+    from_period=datetime.datetime.now().date()+datetime.timedelta(days=-3)
+    to_period=datetime.datetime.now().date()
+    prices=None
+    while from_period<=to_period:
+        try:
+            prices = get_price_list(dt=from_period)
+            
+        except:
+            print (" update_bhavcopy Unexpected error:", sys.exc_info())
+            pass
+    
+        from_period=from_period+datetime.timedelta(days=1)
+        print(from_period)
+    return prices
+
+def get_high_volatility_stocks():
+    df=get_latest_bhavcopy()
+    df['VOLAT']=((df['HIGH']-df['LOW'])/df['LOW'])*100
+    cond1=df['VOLAT']>7
+    cond2=df['TOTTRDVAL']>400000000
+    cond3=df['TOTALTRADES']>40000
+    cond4=df['CLOSE']>100
+
+    df2=df[cond1&cond2&cond3&cond4].copy()
+    return df3
+
+
+
+def get_top_gainer_losers_stocks():
+    df=get_latest_bhavcopy()
+    df['VOLAT']=((df['CLOSE']-df['PREVCLOSE'])/df['CLOSE'])*100
+    cond1=((df['VOLAT']>-80)&(df['VOLAT']<80))
+    cond2=df['TOTTRDVAL']>100000000
+    cond3=df['TOTALTRADES']>10000
+    cond4=df['CLOSE']>100
+
+    df2=df[cond1&cond2&cond3&cond4].copy()
+    df3=df2[df2['SYMBOL'].isin(lstDeriv)]
+    df3=df3[(df3['VOLAT']==np.max(df3['VOLAT']))|(df3['VOLAT']==np.min(df3['VOLAT']))]
+    return df3
+
+'''
+url='https://www.nseindia.com/live_market/dynaContent/live_watch/pre_open_market/pre_open_market.htm'
+import requests as r
+import pandas as pd
+content=r.get(url)
+df=pd.read_html(content.text)
+df=pd.read_html(content.content)
+'''
+'''
+df=get_top_gainer_losers_stocks()
+
+url1='https://chartink.com/screener/gap-down-stocks-1'
+url2='https://www.nseindia.com/live_market/dynaContent/live_watch/pre_open_market/pre_open_market.htm'
+url3='https://www.moneycontrol.com/technicals/gapup/nse/?classic=true'
+url4='https://www.moneycontrol.com/technicals/gapdown/nse/index.html'
+cont=requests.get(url3)
+df=pd.read_html(cont.content)
+'''
+
+#df=moneycontrol_fut_oi_watch('Dn')
